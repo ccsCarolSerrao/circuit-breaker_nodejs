@@ -1,0 +1,36 @@
+{
+  "name": "circuit-breaker",
+  "version": "0.1.0",
+  "description": "Using nodjs + axios + opossum",
+  "main": "index.js",
+  "author": "Carol Serrão",
+  "license": "ISC",
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"{src,__test__,__mocks__}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,__tests__,__mocks__}/**/*.ts\" --fix",
+    "start": "tsc && node dist/index.js"
+  },
+  "_moduleAliases": {
+    "@routes": "dist/routes",
+    "@services": "dist/services",
+    "@controllers": "dist/controllers"
+  },
+  "dependencies": {
+    "axios": "^0.26.1",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "opossum": "^6.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/opossum": "^6.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.20.0",
+    "@typescript-eslint/parser": "^5.20.0",
+    "eslint": "^8.13.0",
+    "eslint-config-prettier": "^8.5.0",
+    "module-alias": "^2.2.2",
+    "prettier": "^2.6.2",
+    "typescript": "^4.6.3"
+  }
+}
