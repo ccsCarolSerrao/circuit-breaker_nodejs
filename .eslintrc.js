@@ -21,7 +21,7 @@ module.exports = {
         'import/no-extraneous-dependencies': 'off',
         'lines-between-class-members': 'off',
         'no-unused-vars': 'off',
-        'no-console': ['error'],
+        'no-console': ['off'],
         'no-buffer-constructor': 'error',
         '@typescript-eslint/no-empty-interface': 'off',
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

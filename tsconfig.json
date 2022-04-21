@@ -42,6 +42,21 @@
             "@services/*": [
                 "src/services/*"
             ],
+            "@clients/*": [
+                "src/clients/*"
+            ],
+            "@apis": [
+                "src/apis"
+            ],
+            "@apis/*": [
+                "src/apis/*"
+            ],
+            "@helpers": [
+                "src/helpers"
+            ],
+            "@helpers/*": [
+                "src/helpers/*"
+            ],
         },
     },
     "include": [

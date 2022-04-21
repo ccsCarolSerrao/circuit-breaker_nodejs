@@ -14,7 +14,10 @@
   "_moduleAliases": {
     "@routes": "dist/routes",
     "@services": "dist/services",
-    "@controllers": "dist/controllers"
+    "@controllers": "dist/controllers",
+    "@clients": "dist/clients",
+    "@apis": "dist/apis",
+    "@helpers": "dist/helpers"
   },
   "dependencies": {
     "axios": "^0.26.1",
