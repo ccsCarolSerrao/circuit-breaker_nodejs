@@ -1,73 +1,69 @@
 /* eslint-disable no-param-reassign */
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import axios from '@clients/axios';
+import axios from '@clients/axios.client';
 import { HttpRequestException } from '@helpers/customError/exceptions/httpRequest.exception';
 import { isSuccessStatusCode } from '@helpers/customError';
 
 type Body = string | object | ArrayBuffer | ArrayBufferView;
 
-class BaseApi {
-    constructor(protected baseUrl: string) {}
-
-    public async get<TResult = any, R = AxiosResponse<TResult>>(path: string, params?: AxiosRequestConfig): Promise<R> {
+export class BaseApi {
+    public async get<TResult = any>(baseUrl: string, path: string, params?: AxiosRequestConfig): Promise<AxiosResponse<TResult, any>> {
         params = params ?? {};
 
-        const response = await axios.get(`${this.baseUrl}${path}`, params);
+        const response = await axios.get(`${baseUrl}${path}`, params);
 
         if (!isSuccessStatusCode(response.status)) {
             throw new HttpRequestException(response.status, response.config?.url as string);
         }
 
-        return response as any;
+        return response.data;
     }
 
-    public async put<TResult = any, R = AxiosResponse<TResult>>(path: string, body?: Body, params?: AxiosRequestConfig): Promise<R> {
+    public async put<TResult = any>(baseUrl: string, path: string, body?: Body, params?: AxiosRequestConfig): Promise<AxiosResponse<TResult, any>> {
         params = params ?? {};
 
-        const response = await axios.put(`${this.baseUrl}${path}`, body, params);
+        const response = await axios.put(`${baseUrl}${path}`, body, params);
 
         if (!isSuccessStatusCode(response.status)) {
             throw new HttpRequestException(response.status, response.config?.url as string);
         }
 
-        return response as any;
+        return response;
     }
 
-    public async post<TResult = any, R = AxiosResponse<TResult>>(path: string, body?: Body, params?: AxiosRequestConfig): Promise<R> {
+    public async post<TResult = any>(baseUrl: string, path: string, body?: Body, params?: AxiosRequestConfig): Promise<AxiosResponse<TResult, any>> {
         params = params ?? {};
 
-        const response = await axios.post(`${this.baseUrl}${path}`, body, params);
+        const response = await axios.post(`${baseUrl}${path}`, body, params);
 
         if (!isSuccessStatusCode(response.status)) {
             throw new HttpRequestException(response.status, response.config?.url as string);
         }
 
-        return response as any;
+        return response;
     }
 
-    public async patch<TResult = any, R = AxiosResponse<TResult>>(path: string, body?: Body, params?: AxiosRequestConfig): Promise<R> {
+    public async patch<TResult = any>(baseUrl: string, path: string, body?: Body, params?: AxiosRequestConfig): Promise<AxiosResponse<TResult, any>> {
         params = params ?? {};
 
-        const response = await axios.patch(`${this.baseUrl}${path}`, body, params);
+        const response = await axios.patch(`${baseUrl}${path}`, body, params);
 
         if (!isSuccessStatusCode(response.status)) {
             throw new HttpRequestException(response.status, response.config?.url as string);
         }
 
-        return response as any;
+        return response;
     }
 
-    public async delete<TResult = any, R = AxiosResponse<TResult>>(path: string, params?: AxiosRequestConfig): Promise<R> {
+    public async delete<TResult = any>(baseUrl: string, path: string, params?: AxiosRequestConfig): Promise<AxiosResponse<TResult, any>> {
         params = params ?? {};
 
-        const response = await axios.delete(`${this.baseUrl}${path}`, params);
+        const response = await axios.delete(`${baseUrl}${path}`, params);
 
         if (!isSuccessStatusCode(response.status)) {
             throw new HttpRequestException(response.status, response.config?.url as string);
         }
 
-        return response as any;
+        return response;
     }
 }
-
-export default BaseApi;
