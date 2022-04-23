@@ -25,12 +25,13 @@ export class CircuitBreakerClient {
         const circuitExport = await this.getCircuitOnCache();
 
         const circuitOptions: CircuitBreaker.Options = {
-            timeout: Number(process.env.CIRCUIT_BREAKER_TIMEOUT_IN_SECONDS),
+            timeout: Number(process.env.CIRCUIT_BREAKER_TIMEOUT_IN_MILLISECONDS),
             errorThresholdPercentage: Number(process.env.CIRCUIT_BREAKER_ERROR_THRESHOLD_PERCENTAGE),
-            resetTimeout: Number(process.env.CIRCUIT_BREAKER_RESET_TIMEOUT_IN_SECONDS),
+            resetTimeout: Number(process.env.CIRCUIT_BREAKER_RESET_TIMEOUT_IN_MILLISECONDS),
             ...circuitExport,
         };
         circuitOptions.enabled = process.env.CIRCUIT_BREAKER_ENABLED === 'true' ? true : false;
+        circuitOptions.volumeThreshold = Number(process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD);
         circuitOptions.group = this.circuitName;
 
         this._circuitBreaker = new CircuitBreaker(this.action, circuitOptions);

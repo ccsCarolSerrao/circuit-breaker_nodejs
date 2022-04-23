@@ -1,5 +1,8 @@
-#dotenv
+# dotenv
 .env
+
+# IDE
+.vscode
 
 # Logs
 logs
