@@ -19,19 +19,14 @@ export class ExternalsApi extends BaseApi {
         return ExternalsApi._circuitInstance;
     }
 
-    @CircuitBreakerClient.CircuitFire(ExternalsApi.getCircuitInstance())
+    @CircuitBreakerClient.circuitFire(ExternalsApi.getCircuitInstance())
     async postExternal() {
-        let result;
-        let error;
-
         try {
             const { data } = await this.post(this._baseUrl, '');
 
-            result = data;
+            return data;
         } catch (exception) {
-            error = exception;
-        } finally {
-            return await ExternalsApi._circuitInstance.fire(result, error);
+            throw exception;
         }
     }
 }

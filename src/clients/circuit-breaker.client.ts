@@ -18,15 +18,24 @@ export class CircuitBreakerClient {
         return Promise.reject(error);
     }
 
-    static CircuitFire(circuit: CircuitBreaker) {
+    static circuitFire(circuit: CircuitBreaker) {
         return (target: object, propertyName: string, propertyDesciptor: PropertyDescriptor): PropertyDescriptor => {
             const method = propertyDesciptor.value;
             propertyDesciptor.value = async function (...args: any[]) {
-                if (!circuit.opened) {
-                    await method.apply(this, args);
-                }
+                let result;
+                let error;
 
-                throw new CircuitBreakerOpenrException(target.constructor.name);
+                try {
+                    if (!circuit.opened) {
+                        result = await method.apply(this, args);
+                    }
+                }
+                catch (exception) {
+                    error = exception;
+                }
+                finally {
+                    return await circuit.fire(result, error);
+                }
             };
             return propertyDesciptor;
         };
