@@ -11,14 +11,14 @@ export class MemoryCache {
         return MemoryCache._instance;
     }
 
-    async put(key: string, value: object | string, timeInSeconds?: number) {
+    put(key: string, value: object | string, timeInSeconds?: number) {
         const timeInMiliseconds = timeInSeconds ? timeInSeconds * 1000 : timeInSeconds;
         const valueString = typeof value === 'string' ? value : JSON.stringify(value);
 
         return cache.put(key, valueString, timeInMiliseconds);
     }
 
-    async get<T>(key: string): Promise<T | string | null> {
+    get<T>(key: string): T | string | null {
         const data = cache.get(key);
 
         if (!data) {

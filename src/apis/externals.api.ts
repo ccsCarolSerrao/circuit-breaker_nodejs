@@ -1,30 +1,37 @@
 import { CircuitBreakerClient } from '@clients/circuit-breaker.client';
-import { AxiosResponse } from 'axios';
 import CircuitBreaker from 'opossum';
 import { BaseApi } from './base.api';
 
 export class ExternalsApi extends BaseApi {
     private _baseUrl = process.env.EXTERNAL_URL || '';
-    private _circuitName = ExternalsApi.name;
-    private static _circuit: CircuitBreaker;
+    private static _circuitName = ExternalsApi.name;
+    private static _circuitInstance: CircuitBreaker;
 
     constructor() {
         super();
+
+        ExternalsApi._circuitInstance = ExternalsApi._circuitInstance ?? new CircuitBreakerClient(ExternalsApi._circuitName).init();
     }
 
+    private static getCircuitInstance() {
+        ExternalsApi._circuitInstance = ExternalsApi._circuitInstance ?? new CircuitBreakerClient(ExternalsApi._circuitName).init();
+
+        return ExternalsApi._circuitInstance;
+    }
+
+    @CircuitBreakerClient.CircuitFire(ExternalsApi.getCircuitInstance())
     async postExternal() {
-        ExternalsApi._circuit = ExternalsApi._circuit ?? (await new CircuitBreakerClient(this._circuitName, this.post).init());
+        let result;
+        let error;
 
         try {
-            const result = (await ExternalsApi._circuit.fire(this._baseUrl, '')) as AxiosResponse<any, any>;
+            const { data } = await this.post(this._baseUrl, '');
 
-            console.log(result);
-
-            return result.data;
-        } catch (error) {
-            console.log(error);
-
-            throw error;
+            result = data;
+        } catch (exception) {
+            error = exception;
+        } finally {
+            return await ExternalsApi._circuitInstance.fire(result, error);
         }
     }
 }

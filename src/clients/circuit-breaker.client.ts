@@ -1,28 +1,51 @@
+import { CircuitBreakerOpenrException } from '@helpers/customError/exceptions/circuitBreakerOpen.exception';
 import CircuitBreaker from 'opossum';
 import { MemoryCache } from './memory-cache.client';
 
 export class CircuitBreakerClient {
-    constructor(protected readonly circuitName: string, protected action: (...args: any) => Promise<any>) {
+    constructor(protected readonly circuitName: string) {
         this._cache = MemoryCache.getInstance();
     }
 
     private _circuitBreaker: CircuitBreaker;
     private _cache: MemoryCache;
 
+    public wrapExternalService(result: any, error: any) {
+        if (result) {
+            return Promise.resolve(result);
+        }
+
+        return Promise.reject(error);
+    }
+
+    static CircuitFire(circuit: CircuitBreaker) {
+        return (target: object, propertyName: string, propertyDesciptor: PropertyDescriptor): PropertyDescriptor => {
+            const method = propertyDesciptor.value;
+            propertyDesciptor.value = async function (...args: any[]) {
+                if (!circuit.opened) {
+                    await method.apply(this, args);
+                }
+
+                throw new CircuitBreakerOpenrException(target.constructor.name);
+            };
+            return propertyDesciptor;
+        };
+    }
+
     private logCircuitState(message: string, circuit: CircuitBreaker) {
         console.log(message, circuit.stats);
     }
 
-    private async getCircuitOnCache() {
-        return (await this._cache.get<CircuitBreaker>(this.circuitName)) as CircuitBreaker;
+    private getCircuitOnCache() {
+        return this._cache.get<CircuitBreaker>(this.circuitName) as CircuitBreaker;
     }
 
-    private async putCircuitOnCache() {
-        await this._cache.put(this.circuitName, this._circuitBreaker);
+    private putCircuitOnCache() {
+        this._cache.put(this.circuitName, this._circuitBreaker);
     }
 
-    async init() {
-        const circuitExport = await this.getCircuitOnCache();
+    init() {
+        const circuitExport = this.getCircuitOnCache();
 
         const circuitOptions: CircuitBreaker.Options = {
             timeout: Number(process.env.CIRCUIT_BREAKER_TIMEOUT_IN_MILLISECONDS),
@@ -34,14 +57,14 @@ export class CircuitBreakerClient {
         circuitOptions.volumeThreshold = Number(process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD);
         circuitOptions.group = this.circuitName;
 
-        this._circuitBreaker = new CircuitBreaker(this.action, circuitOptions);
+        this._circuitBreaker = new CircuitBreaker(this.wrapExternalService, circuitOptions);
 
-        this._circuitBreaker.fallback(() => 'Sorry, out of service right now');
+        //this._circuitBreaker.fallback(() => 'Sorry, out of service right now');
 
-        this._circuitBreaker.on('fire', async (_result) => {
+        this._circuitBreaker.on('fire', (_result) => {
             this.logCircuitState('FIRE', this._circuitBreaker);
 
-            await this.putCircuitOnCache();
+            this.putCircuitOnCache();
         });
 
         this._circuitBreaker.on('success', (_result) => {
