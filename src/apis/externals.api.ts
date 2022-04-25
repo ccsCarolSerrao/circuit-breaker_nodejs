@@ -9,8 +9,6 @@ export class ExternalsApi extends BaseApi {
 
     constructor() {
         super();
-
-        ExternalsApi._circuitInstance = ExternalsApi._circuitInstance ?? new CircuitBreakerClient(ExternalsApi._circuitName).init();
     }
 
     private static getCircuitInstance() {

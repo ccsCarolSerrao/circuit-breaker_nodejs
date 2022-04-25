@@ -19,7 +19,7 @@ export class CircuitBreakerClient {
     }
 
     static circuitFire(circuit: CircuitBreaker) {
-        return (target: object, propertyName: string, propertyDesciptor: PropertyDescriptor): PropertyDescriptor => {
+        return (_target: object, _propertyName: string, propertyDesciptor: PropertyDescriptor): PropertyDescriptor => {
             const method = propertyDesciptor.value;
             propertyDesciptor.value = async function (...args: any[]) {
                 let result;
@@ -29,11 +29,9 @@ export class CircuitBreakerClient {
                     if (!circuit.opened) {
                         result = await method.apply(this, args);
                     }
-                }
-                catch (exception) {
+                } catch (exception) {
                     error = exception;
-                }
-                finally {
+                } finally {
                     return await circuit.fire(result, error);
                 }
             };
@@ -54,13 +52,13 @@ export class CircuitBreakerClient {
     }
 
     init() {
-        const circuitExport = this.getCircuitOnCache();
+        const circuitOnCache = this.getCircuitOnCache();
 
         const circuitOptions: CircuitBreaker.Options = {
             timeout: Number(process.env.CIRCUIT_BREAKER_TIMEOUT_IN_MILLISECONDS),
             errorThresholdPercentage: Number(process.env.CIRCUIT_BREAKER_ERROR_THRESHOLD_PERCENTAGE),
             resetTimeout: Number(process.env.CIRCUIT_BREAKER_RESET_TIMEOUT_IN_MILLISECONDS),
-            ...circuitExport,
+            ...circuitOnCache,
         };
         circuitOptions.enabled = process.env.CIRCUIT_BREAKER_ENABLED === 'true' ? true : false;
         circuitOptions.volumeThreshold = Number(process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD);
@@ -77,31 +75,31 @@ export class CircuitBreakerClient {
         });
 
         this._circuitBreaker.on('success', (_result) => {
-            this.logCircuitState('SUCCESS', this._circuitBreaker);
+            this.logCircuitState(`SUCCESS: The circuit for the ${this.circuitName} just succssed.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('failure', (_result) => {
-            this.logCircuitState('FAILURE', this._circuitBreaker);
+            this.logCircuitState(`FAILURE: The circuit for the ${this.circuitName} just failed.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('timeout', (_result) => {
-            this.logCircuitState('TIMEOUT: Service is taking too long to respond.', this._circuitBreaker);
+            this.logCircuitState(`TIMEOUT: Service ${this.circuitName} is taking too long to respond.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('reject', () => {
-            this.logCircuitState('REJECTED: The circuit for ${route} is open. Failing fast.', this._circuitBreaker);
+            this.logCircuitState(`REJECTED: The circuit for ${this.circuitName} is open. Failing fast.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('open', () => {
-            this.logCircuitState('OPEN: The circuit for the service just opened.', this._circuitBreaker);
+            this.logCircuitState(`OPEN: The circuit for ${this.circuitName} just opened.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('halfOpen', () => {
-            this.logCircuitState('HALF_OPEN: The circuit for the service is half open.', this._circuitBreaker);
+            this.logCircuitState(`HALF_OPEN: The circuit for ${this.circuitName} is half open.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('close', () => {
-            this.logCircuitState('CLOSE: The circuit has closed. Service OK.', this._circuitBreaker);
+            this.logCircuitState(`CLOSE: The circuit for ${this.circuitName} has closed. Service OK.`, this._circuitBreaker);
         });
 
         this._circuitBreaker.on('fallback', (data) => {
