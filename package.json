@@ -15,6 +15,7 @@
     "@routes": "dist/routes",
     "@services": "dist/services",
     "@controllers": "dist/controllers",
+    "@decorators": "dist/decorators",
     "@clients": "dist/clients",
     "@apis": "dist/apis",
     "@helpers": "dist/helpers"

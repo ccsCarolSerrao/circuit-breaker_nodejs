@@ -1,16 +1,14 @@
-import { CircuitBreakerOpenrException } from '@helpers/customError/exceptions/circuitBreakerOpen.exception';
 import CircuitBreaker from 'opossum';
-import { MemoryCache } from './memory-cache.client';
+import { MemoryCache } from '@clients/memory-cache.client';
 
 export class CircuitBreakerClient {
-    constructor(protected readonly circuitName: string) {
+    private _cache: MemoryCache;
+
+    constructor(private readonly _circuitName: string) {
         this._cache = MemoryCache.getInstance();
     }
 
-    private _circuitBreaker: CircuitBreaker;
-    private _cache: MemoryCache;
-
-    public wrapExternalService(result: any, error: any) {
+    private wrapExternalService(result: any, error: any) {
         if (result) {
             return Promise.resolve(result);
         }
@@ -18,40 +16,19 @@ export class CircuitBreakerClient {
         return Promise.reject(error);
     }
 
-    static circuitFire(circuit: CircuitBreaker) {
-        return (_target: object, _propertyName: string, propertyDesciptor: PropertyDescriptor): PropertyDescriptor => {
-            const method = propertyDesciptor.value;
-            propertyDesciptor.value = async function (...args: any[]) {
-                let result;
-                let error;
-
-                try {
-                    if (!circuit.opened) {
-                        result = await method.apply(this, args);
-                    }
-                } catch (exception) {
-                    error = exception;
-                } finally {
-                    return await circuit.fire(result, error);
-                }
-            };
-            return propertyDesciptor;
-        };
-    }
-
     private logCircuitState(message: string, circuit: CircuitBreaker) {
         console.log(message, circuit.stats);
     }
 
     private getCircuitOnCache() {
-        return this._cache.get<CircuitBreaker>(this.circuitName) as CircuitBreaker;
+        return this._cache.get<CircuitBreaker>(this._circuitName) as CircuitBreaker;
     }
 
-    private putCircuitOnCache() {
-        this._cache.put(this.circuitName, this._circuitBreaker);
+    private putCircuitOnCache(circuit: CircuitBreaker) {
+        this._cache.put(this._circuitName, circuit);
     }
 
-    init() {
+    public getInstance() {
         const circuitOnCache = this.getCircuitOnCache();
 
         const circuitOptions: CircuitBreaker.Options = {
@@ -62,54 +39,54 @@ export class CircuitBreakerClient {
         };
         circuitOptions.enabled = process.env.CIRCUIT_BREAKER_ENABLED === 'true' ? true : false;
         circuitOptions.volumeThreshold = Number(process.env.CIRCUIT_BREAKER_VOLUME_THRESHOLD);
-        circuitOptions.group = this.circuitName;
+        circuitOptions.group = this._circuitName;
 
-        this._circuitBreaker = new CircuitBreaker(this.wrapExternalService, circuitOptions);
+        const circuitBreaker = new CircuitBreaker(this.wrapExternalService, circuitOptions);
 
-        //this._circuitBreaker.fallback(() => 'Sorry, out of service right now');
+        //circuitBreaker.fallback(() => 'Sorry, out of service right now');
 
-        this._circuitBreaker.on('fire', (_result) => {
-            this.logCircuitState('FIRE', this._circuitBreaker);
+        circuitBreaker.on('fire', (_result) => {
+            this.logCircuitState('FIRE', circuitBreaker);
 
-            this.putCircuitOnCache();
+            this.putCircuitOnCache(circuitBreaker);
         });
 
-        this._circuitBreaker.on('success', (_result) => {
-            this.logCircuitState(`SUCCESS: The circuit for the ${this.circuitName} just succssed.`, this._circuitBreaker);
+        circuitBreaker.on('success', (_result) => {
+            this.logCircuitState(`SUCCESS: The circuit for the ${this._circuitName} just succssed.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('failure', (_result) => {
-            this.logCircuitState(`FAILURE: The circuit for the ${this.circuitName} just failed.`, this._circuitBreaker);
+        circuitBreaker.on('failure', (_result) => {
+            this.logCircuitState(`FAILURE: The circuit for the ${this._circuitName} just failed.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('timeout', (_result) => {
-            this.logCircuitState(`TIMEOUT: Service ${this.circuitName} is taking too long to respond.`, this._circuitBreaker);
+        circuitBreaker.on('timeout', (_result) => {
+            this.logCircuitState(`TIMEOUT: Service ${this._circuitName} is taking too long to respond.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('reject', () => {
-            this.logCircuitState(`REJECTED: The circuit for ${this.circuitName} is open. Failing fast.`, this._circuitBreaker);
+        circuitBreaker.on('reject', () => {
+            this.logCircuitState(`REJECTED: The circuit for ${this._circuitName} is open. Failing fast.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('open', () => {
-            this.logCircuitState(`OPEN: The circuit for ${this.circuitName} just opened.`, this._circuitBreaker);
+        circuitBreaker.on('open', () => {
+            this.logCircuitState(`OPEN: The circuit for ${this._circuitName} just opened.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('halfOpen', () => {
-            this.logCircuitState(`HALF_OPEN: The circuit for ${this.circuitName} is half open.`, this._circuitBreaker);
+        circuitBreaker.on('halfOpen', () => {
+            this.logCircuitState(`HALF_OPEN: The circuit for ${this._circuitName} is half open.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('close', () => {
-            this.logCircuitState(`CLOSE: The circuit for ${this.circuitName} has closed. Service OK.`, this._circuitBreaker);
+        circuitBreaker.on('close', () => {
+            this.logCircuitState(`CLOSE: The circuit for ${this._circuitName} has closed. Service OK.`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('fallback', (data) => {
-            this.logCircuitState(`FALLBACK: ${JSON.stringify(data)}`, this._circuitBreaker);
+        circuitBreaker.on('fallback', (data) => {
+            this.logCircuitState(`FALLBACK: ${JSON.stringify(data)}`, circuitBreaker);
         });
 
-        this._circuitBreaker.on('shutdown', () => {
-            this.logCircuitState('SHUTDOWN', this._circuitBreaker);
+        circuitBreaker.on('shutdown', () => {
+            this.logCircuitState('SHUTDOWN', circuitBreaker);
         });
 
-        return this._circuitBreaker;
+        return circuitBreaker;
     }
 }

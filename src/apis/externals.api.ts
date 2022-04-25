@@ -1,23 +1,14 @@
-import { CircuitBreakerClient } from '@clients/circuit-breaker.client';
-import CircuitBreaker from 'opossum';
 import { BaseApi } from './base.api';
+import { circuitFire } from '@decorators/circuit-breaker.decorator';
 
 export class ExternalsApi extends BaseApi {
     private _baseUrl = process.env.EXTERNAL_URL || '';
-    private static _circuitName = ExternalsApi.name;
-    private static _circuitInstance: CircuitBreaker;
 
     constructor() {
         super();
     }
 
-    private static getCircuitInstance() {
-        ExternalsApi._circuitInstance = ExternalsApi._circuitInstance ?? new CircuitBreakerClient(ExternalsApi._circuitName).init();
-
-        return ExternalsApi._circuitInstance;
-    }
-
-    @CircuitBreakerClient.circuitFire(ExternalsApi.getCircuitInstance())
+    @circuitFire()
     async postExternal() {
         try {
             const { data } = await this.post(this._baseUrl, '');
